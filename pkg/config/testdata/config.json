@@ -1,0 +1,14 @@
+{
+    "customRecords": [
+        {
+            "host": "test-4g-pi1.device.test.aether.net",
+            "address": "10.250.0.254"
+        }
+    ],
+    "logLevel": "debug",
+    "roc":{
+        "url": "https://roc.test.aether.org"
+    },
+    "domain": "device.test.aether.net",
+    "site": "Test Site"
+}

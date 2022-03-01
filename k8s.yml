@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: 2022-present Open Networking Foundation <info@opennetworking.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: subdns-config
+  namespace: kube-system
+data:
+  config.json: |
+    {
+        "customRecords": [
+            {
+                "host": "test-4g-pi1.device.test.aether.net",
+                "address": "10.250.0.254"
+            }
+        ],
+        "roc":{
+            "url": "https://roc.test.aether.org"
+        },
+        "domain": "device.test.aether.net",
+        "site": "test-site"
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: subdns-oidc-creds
+  namespace: kube-system
+data:
+  openidc.json: {{ secret_value_base64_encoded }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subdns
+  namespace: kube-system
+  labels:
+    app: subdns
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: subdns
+  template:
+    metadata:
+      labels:
+        app: subdns
+    spec:
+      containers:
+      - name: subdns
+        image: subscriber-dns:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: 170Mi
+          requests:
+            cpu: 100m
+            memory: 70Mi
+        command: ["subdns"]
+        args: [ "-config", "/etc/subdns/config.json", "-config", "/etc/subdns/openidc.json" ]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/subdns/config.json
+          subPath: config.json
+          readOnly: true
+        - name: oidc-creds
+          mountPath: /etc/subdns/openidc.json
+          subPath: openidc.json
+          readOnly: true
+        ports:
+        - containerPort: 53
+          name: dns-udp
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - all
+          readOnlyRootFilesystem: true
+        # TODO: Add liveness and readiness probes
+      volumes:
+        - name: config
+          configMap:
+            name: subdns-config
+        - name: oidc-creds
+          secret:
+            secretName: subdns-oidc-creds
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: subdns
+  namespace: kube-system
+  labels:
+    app: subdns
+spec:
+  selector:
+    app: subdns
+  ports:
+  - name: dns-udp
+    port: 53
+    protocol: UDP
+  - name: dns-tcp
+    port: 53
+    protocol: TCP

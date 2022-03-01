@@ -1,0 +1,9 @@
+{
+    "roc": {
+        "openidc": {
+            "tokenUrl": "https://keycloak.test.aether.org/auth/realms/master/protocol/openid-connect/token",
+            "username": "testuser",
+            "password": "testpassword"
+        }
+    }
+}
