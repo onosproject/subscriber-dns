@@ -54,10 +54,11 @@ spec:
     spec:
       containers:
       - name: subdns
-        image: subscriber-dns:latest
+        image: onosproject/subscriber-dns:latest
         imagePullPolicy: IfNotPresent
         resources:
           limits:
+            cpu: 250m
             memory: 170Mi
           requests:
             cpu: 100m
