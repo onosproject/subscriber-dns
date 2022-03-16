@@ -12,10 +12,6 @@ import (
 	"github.com/onosproject/subscriber-dns/pkg/server"
 )
 
-const (
-	DefaultLogLevel = logging.DebugLevel
-)
-
 var (
 	log         = logging.GetLogger("subscriber-dns")
 	configFiles arrayFlags
@@ -43,6 +39,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// TODO: fix log level configurable
+	log.SetLevel(logging.InfoLevel)
 	log.Infof("%+v", *cfg)
 
 	server := &server.Server{

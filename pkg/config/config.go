@@ -13,11 +13,6 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 )
 
-const (
-	DefaultBind     = "0.0.0.0:53"
-	DefaultProtocol = "udp"
-)
-
 type CustomRecord struct {
 	Host string `json:"host"`
 	Addr string `json:"address"`
@@ -74,8 +69,9 @@ func (cfg *Config) validate() error {
 func defaultConfig() *Config {
 	cfg := new(Config)
 
-	cfg.Bind = DefaultBind
-	cfg.Protocol = DefaultProtocol
+	cfg.Bind = "0.0.0.0:53"
+	cfg.Protocol = "udp"
+	cfg.LogLevel = "info"
 
 	return cfg
 }
