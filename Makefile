@@ -30,33 +30,16 @@ DOCKER_BUILD_ARGS ?= \
         --build-arg org_opencord_vcs_commit_date="${DOCKER_LABEL_COMMIT_DATE}" \
         --build-arg org_opencord_vcs_dirty="${DOCKER_LABEL_VCS_DIRTY}"
 
+build-tools:=$(shell if [ ! -d "./build/build-tools" ]; then mkdir -p build; cd build && git clone https://github.com/onosproject/build-tools.git; fi)
+include ./build/build-tools/make/onf-common.mk
+
 all: images
 
 images: # @HELP build simulators image
 images: subscriber-dns-docker
 
-deps: # @HELP ensure that the required dependencies are in place
-	GOPRIVATE="github.com/onosproject/*" go build -v `go list ./... `
-	bash -c "diff -u <(echo -n) <(git diff go.mod)"
-	bash -c "diff -u <(echo -n) <(git diff go.sum)"
-
-linters: golang-ci # @HELP examines Go source code and reports coding problems
-	golangci-lint run --timeout 5m
-
-build-tools: # @HELP install the ONOS build tools if needed
-	@if [ ! -d "../build-tools" ]; then cd .. && git clone https://github.com/onosproject/build-tools.git; fi
-
-jenkins-tools: # @HELP installs tooling needed for Jenkins
-	cd .. && go get -u github.com/jstemmer/go-junit-report && go get github.com/t-yuki/gocover-cobertura
-
-golang-ci: # @HELP install golang-ci if not present
-	golangci-lint --version || curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b `go env GOPATH`/bin v1.42.0
-
-license_check: build-tools # @HELP examine and ensure license headers exist
-	./../build-tools/licensing/boilerplate.py -v --rootdir=${CURDIR} --boilerplate SPDX-Apache-2.0
-
 # @HELP run various tests
-test: unit-test deps license_check linters
+test: unit-test deps license linters
 
 # @HELP run init tests
 unit-test:
@@ -64,7 +47,7 @@ unit-test:
 	go test -cover -race `go list github.com/onosproject/subscriber-dns/cmd/...`
 
 jenkins-test:  # @HELP run the unit tests and source code validation producing a junit style report for Jenkins
-jenkins-test: deps license_check linters jenkins-tools
+jenkins-test: deps license linters jenkins-tools
 	TEST_PACKAGES=`go list github.com/onosproject/subscriber-dns/... ` ./../build-tools/build/jenkins/make-unit
 
 subscriber-dns-docker:
@@ -83,19 +66,11 @@ kind-only:
 publish: # @HELP publish version on github and dockerhub
 	./../build-tools/publish-version ${VERSION} onosproject/subscriber-dns
 
-jenkins-publish: build-tools jenkins-tools # @HELP Jenkins calls this to publish artifacts
+jenkins-publish: # @HELP Jenkins calls this to publish artifacts
 	./build/bin/push-images
-	../build-tools/release-merge-commit
+	./build/build-tools/release-merge-commit
 
-clean: # @HELP remove all the build artifacts
+clean:: # @HELP remove all the build artifacts
 	rm -rf ./build/_output
 	rm -rf ./vendor
 	rm -rf ./cmd/subdns/subdns
-
-help:
-	@grep -E '^.*: *# *@HELP' $(MAKEFILE_LIST) \
-    | sort \
-    | awk ' \
-        BEGIN {FS = ": *# *@HELP"}; \
-        {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}; \
-    '
