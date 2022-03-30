@@ -48,7 +48,7 @@ unit-test:
 
 jenkins-test:  # @HELP run the unit tests and source code validation producing a junit style report for Jenkins
 jenkins-test: deps license linters jenkins-tools
-	TEST_PACKAGES=`go list github.com/onosproject/subscriber-dns/... ` ./../build-tools/build/jenkins/make-unit
+	TEST_PACKAGES=`go list github.com/onosproject/subscriber-dns/... ` ./build/build-tools/build/jenkins/make-unit
 
 subscriber-dns-docker:
 	docker build . -f Dockerfile \
@@ -64,7 +64,7 @@ kind-only:
 	kind load docker-image --name ${KIND_CLUSTER_NAME} ${DOCKER_REPOSITORY}subscriber-dns:${SUBSCRIBER_DNS_VERSION}
 
 publish: # @HELP publish version on github and dockerhub
-	./../build-tools/publish-version ${VERSION} onosproject/subscriber-dns
+	./build/build-tools/publish-version ${VERSION} onosproject/subscriber-dns
 
 jenkins-publish: # @HELP Jenkins calls this to publish artifacts
 	./build/bin/push-images
